@@ -1,9 +1,11 @@
 // ==UserScript==
 // @name         GitHub Copilot 免费额度显示（美化 + 主动查询）
-// @namespace    https://github.com/
+// @namespace    https://github.com/weberyap/GitHub-Copilot-Free-Quota-Display
 // @version      1.2
 // @description  主动查询 GitHub Copilot 免费额度并以美观方式显示
-// @author       Copilot 粉
+// @author       weberyap
+// @homepageURL  https://github.com/weberyap/GitHub-Copilot-Free-Quota-Display
+// @supportURL   https://github.com/weberyap/GitHub-Copilot-Free-Quota-Display/issues
 // @match        https://github.com/settings/copilot/**
 // @grant        none
 // ==/UserScript==
