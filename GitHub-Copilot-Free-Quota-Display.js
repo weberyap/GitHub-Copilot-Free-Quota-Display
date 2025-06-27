@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         GitHub Copilot 免费额度显示（美化 + 主动查询）
 // @namespace    https://github.com/weberyap/GitHub-Copilot-Free-Quota-Display
-// @version      1.2
-// @description  主动查询 GitHub Copilot 免费额度并以美观方式显示
+// @version      1.3
+// @description  主动查询 GitHub Copilot 免费额度并以美观方式显示，支持免费计划
 // @author       weberyap
 // @homepageURL  https://github.com/weberyap/GitHub-Copilot-Free-Quota-Display
 // @supportURL   https://github.com/weberyap/GitHub-Copilot-Free-Quota-Display/issues
@@ -16,15 +16,21 @@
   const API_URL = 'https://github.com/github-copilot/chat/entitlement';
 
   function createQuotaBox(data) {
-    const { chat, completions } = data.quotas.remaining;
-    const { chat: chatTotal, completions: compTotal } = data.quotas.limits;
+    const { chat = 0, completions = 0, chatPercentage = 0 } = data.quotas.remaining ?? {};
+    const resetDate = data.quotas.resetDate ?? "未知";
+    const plan = data.plan ?? "未知";
 
-    const chatUsed = chatTotal - chat;
-    const compUsed = compTotal - completions;
-    const chatPct = Math.round((chatUsed / chatTotal) * 100);
-    const compPct = Math.round((compUsed / compTotal) * 100);
+    const chatTotal = chatPercentage ? Math.round(chat / (1 - chatPercentage / 100)) : null;
+    const chatUsed = chatTotal !== null ? chatTotal - chat : null;
+    const chatPct = chatPercentage || 0;
+
+    const compText = completions ? `${completions} 次剩余` : "不可用";
+    const chatText = chatTotal
+      ? `${chatUsed} / ${chatTotal} (${chatPct.toFixed(1)}%)`
+      : `${chat} 剩余 (${chatPct.toFixed(1)}%)`;
 
     const box = document.createElement('div');
+    box.id = 'copilot-quota-box';
     box.style = `
       background: #f5faff;
       border: 1px solid #1b7eff;
@@ -40,19 +46,16 @@
     box.innerHTML = `
       <h3 style="margin-top:0">🚀 GitHub Copilot 免费额度</h3>
       <div style="margin-bottom: 0.8em">
-        <strong>💬 Chat:</strong> ${chatUsed} / ${chatTotal} (${chatPct}%)
+        <strong>💬 Chat:</strong> ${chatText}
         <div style="background:#ddd; border-radius:4px; overflow:hidden;">
           <div style="width:${chatPct}%; background:#1b7eff; height:10px;"></div>
         </div>
       </div>
       <div style="margin-bottom: 0.8em">
-        <strong>⚡ Completion:</strong> ${compUsed} / ${compTotal} (${compPct}%)
-        <div style="background:#ddd; border-radius:4px; overflow:hidden;">
-          <div style="width:${compPct}%; background:#00b36b; height:10px;"></div>
-        </div>
+        <strong>⚡ Completion:</strong> ${compText}
       </div>
-      <div>📅 重置时间：${data.quotas.resetDate}</div>
-      <div>📦 当前计划：${data.plan}</div>
+      <div>📅 重置时间：${resetDate}</div>
+      <div>📦 当前计划：${plan}</div>
       <div style="margin-top: 1em">
         <button id="copilot-refresh" style="
           padding: 6px 12px;
@@ -65,7 +68,6 @@
       </div>
     `;
 
-    // 添加按钮逻辑
     box.querySelector('#copilot-refresh').onclick = () => {
       box.innerHTML = "⏳ 正在重新获取 Copilot 额度...";
       fetchQuota(true);
@@ -91,7 +93,6 @@
       const data = await response.json();
       const existing = document.getElementById('copilot-quota-box');
       const newBox = createQuotaBox(data);
-      newBox.id = 'copilot-quota-box';
 
       if (existing) {
         existing.replaceWith(newBox);
@@ -105,8 +106,7 @@
     }
   }
 
-  // 初始化查询
   window.addEventListener('load', () => {
-    setTimeout(() => fetchQuota(), 1200); // 等待页面元素渲染
+    setTimeout(() => fetchQuota(), 1200);
   });
 })();
